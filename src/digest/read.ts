@@ -73,6 +73,29 @@ export function digestLines(text: string): Night {
   return { rows, badLines };
 }
 
+export type StatusCounts = { ok: number; retry: number; fail: number };
+
+// Counts log LINES per status (rows only keep the last status). Bad lines are not counted.
+export function countStatuses(text: string): StatusCounts {
+  const counts: StatusCounts = { ok: 0, retry: 0, fail: 0 };
+  for (const raw of text.split('\n')) {
+    if (raw.trim() === '') continue;
+    const line = parseLine(raw);
+    if (line) counts[line.status]++;
+  }
+  return counts;
+}
+
+// null when the night's file can't be read.
+export function readCounts(runsDir: string, night: string): StatusCounts | null {
+  if (!NIGHT.test(night)) return null;
+  try {
+    return countStatuses(readFileSync(join(runsDir, `${night}.jsonl`), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 export const readNight: ReadNight = (runsDir, night) => {
   if (!NIGHT.test(night)) return null;
   let text: string;
